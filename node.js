@@ -1,5 +1,10 @@
 const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 let logs = [];
 
@@ -13,42 +18,30 @@ app.get("/", (req, res) => {
         datetime: new Date().toISOString(),
         ip: getIp(req),
         port: req.socket.remotePort,
-        method: req.method,
-        url: req.url,
         userAgent: req.headers["user-agent"]
     };
 
-    logs.unshift(log); // NAJNOWSZE NA GÓRZE
-
-    if (logs.length > 100) {
-        logs = logs.slice(0, 100);
-    }
+    logs.unshift(log);
+    if (logs.length > 100) logs.pop();
 
     res.send(`
-        <html>
-        <body>
-            <h1>LAST 100 REQUESTS</h1>
-            <table border="1" cellpadding="5">
-                <tr>
-                    <th>Time</th>
-                    <th>IP</th>
-                    <th>Port</th>
-                    <th>UA</th>
-                </tr>
-                ${logs.map(l => `
-                    <tr>
-                        <td>${l.datetime}</td>
-                        <td>${l.ip}</td>
-                        <td>${l.port}</td>
-                        <td>${l.userAgent}</td>
-                    </tr>
-                `).join("")}
-            </table>
-        </body>
-        </html>
+        <h1>LAST 100 REQUESTS</h1>
+        <pre>${JSON.stringify(logs, null, 2)}</pre>
     `);
 });
 
-app.listen(8080, () => {
+wss.on("connection", (ws, req) => {
+
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    const port = req.socket.remotePort;
+
+    ws.send(`HELLO ${ip}:${port}`);
+
+    ws.on("message", msg => {
+        console.log("WS:", msg.toString());
+    });
+});
+
+server.listen(8080, () => {
     console.log("Server running");
 });
