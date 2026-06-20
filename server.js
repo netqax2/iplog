@@ -10,8 +10,9 @@ function getIp(req) {
 app.get("/", (req, res) => {
 
     const log = {
-        timePL: new Date().toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" })
+        timeUTC: new Date().toISOString(),
         ip: getIp(req),
+        port: req.socket.remotePort,
         userAgent: req.headers["user-agent"]
     };
 
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
                 <tr>
                     <th>UTC Time</th>
                     <th>IP</th>
+                    <th>Port</th>
                     <th>User Agent</th>
                 </tr>
 
@@ -37,6 +39,7 @@ app.get("/", (req, res) => {
                     <tr>
                         <td>${l.timeUTC}</td>
                         <td>${l.ip}</td>
+                        <td>${l.port}</td>
                         <td>${l.userAgent}</td>
                     </tr>
                 `).join("")}
