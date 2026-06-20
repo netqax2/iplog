@@ -10,7 +10,7 @@ function getIp(req) {
 app.get("/", (req, res) => {
 
     const log = {
-        timeUTC: new Date().toISOString(),
+        timePL: new Date().toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" })
         ip: getIp(req),
         userAgent: req.headers["user-agent"]
     };
