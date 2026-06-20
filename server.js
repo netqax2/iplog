@@ -10,7 +10,7 @@ function getIp(req) {
 app.get("/", (req, res) => {
 
     const log = {
-        time: new Date().toISOString(),
+        timeUTC: new Date().toISOString(),
         ip: getIp(req),
         userAgent: req.headers["user-agent"]
     };
@@ -23,27 +23,23 @@ app.get("/", (req, res) => {
 
     res.send(`
         <html>
-        <head>
-            <title>IP LOG</title>
-        </head>
         <body>
-            <h1>LAST 100 VISITS</h1>
+            <h1>LAST 100 VISITS (UTC)</h1>
 
             <table border="1" cellpadding="5">
                 <tr>
-                    <th>Time</th>
+                    <th>UTC Time</th>
                     <th>IP</th>
                     <th>User Agent</th>
                 </tr>
 
                 ${logs.map(l => `
                     <tr>
-                        <td>${l.time}</td>
+                        <td>${l.timeUTC}</td>
                         <td>${l.ip}</td>
                         <td>${l.userAgent}</td>
                     </tr>
                 `).join("")}
-
             </table>
         </body>
         </html>
