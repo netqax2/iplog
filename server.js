@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: "*/*" }));
 
 let logs = [];
@@ -11,16 +10,20 @@ function getIp(req) {
     return req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 }
 
+// LOG MESSAGE (TO JEST KLUCZ)
 app.post("/log", (req, res) => {
+
+    const message =
+        typeof req.body === "string"
+            ? req.body
+            : JSON.stringify(req.body);
 
     const log = {
         time: new Date().toLocaleString("pl-PL", {
             timeZone: "Europe/Warsaw"
         }),
         ip: getIp(req),
-        message: typeof req.body === "string"
-            ? req.body
-            : JSON.stringify(req.body)
+        message: message || "(empty)"
     };
 
     logs.unshift(log);
@@ -32,12 +35,13 @@ app.post("/log", (req, res) => {
     res.send("OK");
 });
 
+// VIEW PAGE
 app.get("/", (req, res) => {
 
     res.send(`
         <html>
         <body>
-            <h1>LAST 100 MESSAGES</h1>
+            <h1>LAST 100 LOGS</h1>
 
             <table border="1" cellpadding="5">
                 <tr>
@@ -53,8 +57,8 @@ app.get("/", (req, res) => {
                         <td><pre>${l.message}</pre></td>
                     </tr>
                 `).join("")}
-
             </table>
+
         </body>
         </html>
     `);
@@ -63,5 +67,5 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-    console.log("RUNNING ON PORT", PORT);
+    console.log("RUNNING ON", PORT);
 });
