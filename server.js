@@ -1,31 +1,26 @@
 const express = require("express");
 const app = express();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.text({ type: "*/*" }));
+
 let logs = [];
 
 function getIp(req) {
     return req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 }
 
-function getClientDetails(req) {
-    return {
-        // Render zawsze przekazuje prawdziwe IP w 'true-client-ip' lub na początku listy 'x-forwarded-for'
-        ip: req.headers["true-client-ip"] || req.headers["x-forwarded-for"]?.split(',')[0].trim() || req.socket.remoteAddress,
-        // Pobieramy port z nagłówka 'x-forwarded-port' zamiast z socketu
-        port: req.headers["x-forwarded-port"] || "unknown"
-    };
-}
-
-app.get("/", (req, res) => {
-
-    const client = getClientDetails(req);
+app.post("/log", (req, res) => {
 
     const log = {
-        // Zmieniłem nazwę z timeUTC na timeWarsaw, ponieważ podajesz strefę Europe/Warsaw
-        timeWarsaw: new Date().toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }),
-        ip: client.ip,
-        port: client.port,
-        userAgent: req.headers["user-agent"]
+        time: new Date().toLocaleString("pl-PL", {
+            timeZone: "Europe/Warsaw"
+        }),
+        ip: getIp(req),
+        message: typeof req.body === "string"
+            ? req.body
+            : JSON.stringify(req.body)
     };
 
     logs.unshift(log);
@@ -34,33 +29,39 @@ app.get("/", (req, res) => {
         logs = logs.slice(0, 100);
     }
 
+    res.send("OK");
+});
+
+app.get("/", (req, res) => {
+
     res.send(`
         <html>
         <body>
-            <h1>LAST 100 VISITS (UTC)</h1>
+            <h1>LAST 100 MESSAGES</h1>
 
             <table border="1" cellpadding="5">
                 <tr>
-                    <th>UTC Time</th>
+                    <th>Time</th>
                     <th>IP</th>
-                    <th>Port</th>
-                    <th>User Agent</th>
+                    <th>Message</th>
                 </tr>
 
                 ${logs.map(l => `
                     <tr>
-                        <td>${l.timeWarsaw}</td>
+                        <td>${l.time}</td>
                         <td>${l.ip}</td>
-                        <td>${l.port}</td>
-                        <td>${l.userAgent}</td>
+                        <td><pre>${l.message}</pre></td>
                     </tr>
                 `).join("")}
+
             </table>
         </body>
         </html>
     `);
 });
 
-app.listen(8080, () => {
-    console.log("RUNNING");
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+    console.log("RUNNING ON PORT", PORT);
 });
