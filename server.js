@@ -33,7 +33,7 @@ function addLog(req, message = "") {
 // FORMULARZ + STRONA
 app.get("/", (req, res) => {
 
-    addLog(req, "PAGE_OPEN");
+    addLog(req, req.query.msg || "PAGE_OPEN");
 
     res.send(`
         <html>
