@@ -7,12 +7,24 @@ function getIp(req) {
     return req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 }
 
+function getClientDetails(req) {
+    return {
+        // Render zawsze przekazuje prawdziwe IP w 'true-client-ip' lub na początku listy 'x-forwarded-for'
+        ip: req.headers["true-client-ip"] || req.headers["x-forwarded-for"]?.split(',')[0].trim() || req.socket.remoteAddress,
+        // Pobieramy port z nagłówka 'x-forwarded-port' zamiast z socketu
+        port: req.headers["x-forwarded-port"] || "unknown"
+    };
+}
+
 app.get("/", (req, res) => {
 
+    const client = getClientDetails(req);
+
     const log = {
-        timeUTC: new Date().toLocaleString("pl-PL", {timeZone: "Europe/Warsaw"}),
-        ip: getIp(req),
-        port: req.socket.remotePort,
+        // Zmieniłem nazwę z timeUTC na timeWarsaw, ponieważ podajesz strefę Europe/Warsaw
+        timeWarsaw: new Date().toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }),
+        ip: client.ip,
+        port: client.port,
         userAgent: req.headers["user-agent"]
     };
 
@@ -37,7 +49,7 @@ app.get("/", (req, res) => {
 
                 ${logs.map(l => `
                     <tr>
-                        <td>${l.timeUTC}</td>
+                        <td>${l.timeWarsaw}</td>
                         <td>${l.ip}</td>
                         <td>${l.port}</td>
                         <td>${l.userAgent}</td>
